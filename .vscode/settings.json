@@ -1,0 +1,17 @@
+{
+    "files.associations": {
+        "nurfile": "nushell",
+        "sdl.h": "c",
+        "optional": "cpp",
+        "expected": "cpp",
+        "memory": "cpp"
+    },
+    "clangd.arguments": [
+        "--compile-commands-dir=build-x86_64-windows",
+        "--query-driver=C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.50.35717/bin/HostX64/x64/cl.exe",
+        // "--query-driver=${workspaceFolder}/toolchain/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe",
+        "--enable-config",
+        "-log=verbose"
+    ],
+    "clangd.path": "C:/Users/AUTO/terminal/clangd_snapshot_20251207/bin/clangd.exe",
+}

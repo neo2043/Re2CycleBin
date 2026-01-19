@@ -1,0 +1,8 @@
+/build-*
+/cmake-build-*
+/toolchain
+/downloads
+/vendor
+.idea
+/.gitignored
+/db

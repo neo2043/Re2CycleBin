@@ -1,0 +1,178 @@
+const host_target = $"($nu.os-info.arch)-($nu.os-info.name)"
+const build_dir  = $"build-($host_target)"
+
+def "nur build" [target = all] {
+    mkdir $build_dir
+    cd $build_dir
+    # cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_MAKE_PROGRAM=ninja -G Ninja -S .. -B .
+    # cmake --build . --config Release --target $target
+    # cmake -G "Visual Studio 17 2022" -A x64 -S .. -B .
+    # cmake -G Ninja -S .. -B . -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
+    # cmake -DCMAKE_EXPORT_COMPILE_COMMANDS=1 -G Ninja -S .. -B . 
+    # cmake -G Ninja -S .. -B . 
+    cmake -G Ninja -S .. -B . -DCMAKE_C_COMPILER="C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.50.35717/bin/HostX64/x64/cl.exe" -DCMAKE_CXX_COMPILER="C:/Program Files/Microsoft Visual Studio/18/Community/VC/Tools/MSVC/14.50.35717/bin/HostX64/x64/cl.exe"
+    # cmake -G Ninja -S .. -B . -DCMAKE_C_COMPILER="C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/Llvm/x64/bin/clang-cl.exe" -DCMAKE_CXX_COMPILER="C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/Llvm/x64/bin/clang-cl.exe"
+    cmake --build . --target $target
+}
+
+def "nur clean" [] {
+    rm -rf ./build*
+    rm -rf ./cmake-build-*
+}
+    
+def --wrapped "nur run" [bin = re2, ...rest] {
+    # overlay use env.nu
+    rm -rf "db/"
+    mkdir db
+    nur build $bin
+    ^$"($build_dir | path join $bin)" ...$rest
+}
+
+def "get msvc" [] {
+    let d_url = "https://github.com/Data-Oriented-House/PortableBuildTools/releases/download/v2.10.2/PortableBuildTools.exe"
+    let temp_path = $env.PWD | path join downloads
+    mkdir $temp_path
+    let download_path = $env.PWD | path join downloads $"($d_url | split row "/" | last)"
+    http get $d_url | save $download_path
+}
+
+def "toolchain" [] {
+    if (not ("PortableBuildTools.exe" in ( try { ls -as ./downloads } | default -e [] | where type == "file" | get name ))) {
+        get msvc
+    }
+    if (not ("toolchain" in ( try { ls } | default -e [] | where type == "dir" | get name ))) {
+        ./downloads/PortableBuildTools.exe msvc=14.44.17.14 sdk=26100 host=x64 target=x64 path=($env.PWD | path join toolchain) accept_license
+    }
+}
+
+# def "get vulkan sdk" [] {
+#     let d_url = "https://sdk.lunarg.com/sdk/download/1.4.321.1/windows/vulkansdk-windows-X64-1.4.321.1.exe"
+#     let download_path = $env.PWD | path join downloads $"($d_url | split row "/" | last)"
+#     http get $d_url | save $download_path
+# }
+
+def "nur get sqlite" [] {
+    let d_url = "https://sqlite.org/2025/sqlite-amalgamation-3510000.zip"
+    let temp_path = $env.PWD | path join downloads
+    let vendor_path = $env.PWD | path join vendor
+    mkdir $temp_path
+    mkdir $vendor_path
+    let download_path = $env.PWD | path join downloads $"($d_url | split row "/" | last)"
+    http get $d_url | save -f $download_path
+    if ($nu.os-info.name == windows) {        
+        ^tar -xvf $download_path -C $"($env.PWD | path join downloads)"
+    }
+    mv ($env.PWD | path join downloads sqlite-amalgamation-3510000) ($env.PWD | path join vendor sqlite)
+}
+
+# def "vulkan" [] {
+#     if (not ("vulkansdk-windows-X64-1.4.321.1.exe" in ( try { ls -as ./downloads } | default -e [] | where type == "file" | get name ))) {
+#         get vulkan sdk
+#     }
+    
+#     if (not ("vulkan" in ( try { ls -as ./lib } | default -e [] | where type == "dir" | get name ))) {
+#         if (is-admin) {
+#             ./downloads/vulkansdk-windows-X64-1.4.321.1.exe in -t ($env.PWD | path join lib vulkan) --al --am --mco 12
+#         } else {
+#             sudo e>| str trim | if ($in == "Sudo is disabled on this machine. To enable it, go to the Developer Settings page in the Settings app") {
+#                 error make {msg: "Run in Admin Mode or Enable Sudo in Developer Settings" } 
+#             } else {
+#                 sudo ./downloads/vulkansdk-windows-X64-1.4.321.1.exe in -t ($env.PWD | path join lib vulkan) --al --am --mco 12
+#             }
+#         }
+#     }
+# }
+
+def "nur setup toolchain" [] {
+    toolchain
+    # vulkan
+}
+
+# def "nur setup env" [] {
+#     overlay use env.nu
+# }
+
+# let vswhere = $'($env."ProgramFiles(x86)")/Microsoft Visual Studio/Installer/vswhere.exe'
+# let installPath = ^$vswhere -latest -property installationPath
+# let vsdevcmd = $'($installPath)/Common7/Tools/vsdevcmd.bat'
+# let op = run-external $env.comspec "/c" $vsdevcmd "-no_logo" "-startdir=none" "-arch=x64" "-host_arch=x64" "&&" "set"
+# $op | decode utf8 | lines | parse "{key}={value}" | where key != PWD and key != FILE_PWD and key != CURRENT_FILE | transpose -ird | load-env
+
+# $env.EXTERNAL_INCLUDE = if "EXTERNAL_INCLUDE" in $env {($env.EXTERNAL_INCLUDE | split row (char esep) | uniq)}
+# $env.INCLUDE = if "INCLUDE" in $env {($env.INCLUDE | split row (char esep) | uniq)}
+# $env.LIB = if "LIB" in $env {($env.LIB | split row (char esep) | uniq)}
+# $env.LIBPATH = if "LIBPATH" in $env {($env.LIBPATH | split row (char esep) | uniq)}
+# $env.Path = if "Path" in $env {($env.Path | split row (char esep) | uniq)}
+# $env.PATHEXT = if "PATHEXT" in $env {($env.PATHEXT | split row (char esep) | uniq)}
+# $env.PSModulePath = if "PSModulePath" in $env {($env.PSModulePath | split row (char esep) | uniq)}
+# $env.WindowsLibPath = if "WindowsLibPath" in $env {($env.WindowsLibPath | split row (char esep) | uniq)}
+# $env.__VSCMD_PREINIT_PATH = if "__VSCMD_PREINIT_PATH" in $env {($env.__VSCMD_PREINIT_PATH | split row (char esep) | uniq)}
+
+# def "nur patch" [] {
+#   let temp = $env.PWD
+#   cd vendor/datastructs
+#   git apply ($temp | path join patches/datastructs.patch)
+# }
+  
+# def "nur unpatch" [] {
+#   let temp = $env.PWD
+#   cd vendor/datastructs
+#   git apply -R ($temp | path join patches/datastructs.patch)
+# }
+
+# def "nur patch generate" [] {
+#     let temp = $env.PWD
+#     cd vendor/datastructs
+#     git diff | save --force ($temp | path join patches/datastructs.patch)
+# }
+
+# def "nur get sqlite" [] {
+#     let temp_path = $nu.temp-path | path join $"(random chars --length 8).zip"
+#     http get https://sqlite.org/2024/sqlite-amalgamation-3460000.zip | save $temp_path
+#     do {
+#       cd ($nu.temp-path)
+#       if ($nu.os-info.name == windows) {        
+#         ^tar -xvf $temp_path
+#       } else if ($nu.os-info.name == linux) {
+#         ^unzip $temp_path
+#       }
+#     }
+#     mv ($nu.temp-path | path join sqlite-amalgamation-3460000) ($env.PWD | path join vendor sqlite)
+# }
+
+# const query = '
+# SELECT
+#   FILE_TABLE.ID AS id,
+#   SUM(COALESCE(CHUNKS.SIZE, 0)) AS original,
+#   SUM(COALESCE(LENGTH(CHUNKS.CHUNK), 0)) AS compressed,
+#   FILE_TABLE.FILE_PATH AS path
+# FROM FILE_TABLE
+# LEFT JOIN CHUNKS ON FILE_TABLE.ID = CHUNKS.FILE_ID
+# GROUP BY FILE_TABLE.ID;
+# SORT BY FILE_TABLE.ID ASC;
+# '
+
+# def "nur dump" [db_path: path = "output.db"] {
+#   let db = open $db_path;
+
+#   let result = (
+#     $db
+#     | query db $query
+#     | insert ratio { $in.compressed / ([1 $in.original] | math max) | into float }
+#     | update original { $in | into filesize }
+#     | update compressed { $in | into filesize }
+#     | select id original compressed ratio path
+#   )
+
+#   $result | explore
+
+#   (
+#     $result
+#     | reduce --fold { original: 0, compressed: 0 } { |it, acc| $acc | update original { ($it.original | into int) + $acc.original } | update compressed { ($it.compressed | into int) + $acc.compressed } }
+#     | insert ratio { $in.compressed / ([1 $in.original] | math max) | into float }
+#     | update original { $in | into filesize }
+#     | update compressed { $in | into filesize }
+#     | select original compressed ratio
+#     | print
+#   )
+# }

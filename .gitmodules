@@ -1,0 +1,18 @@
+[submodule "threadpool"]
+	path = vendor/threadpool
+	url = git@github.com:DeveloperPaul123/thread-pool.git
+[submodule "cppcoro"]
+	path = vendor/cppcoro
+	url = git@github.com:neo2043/cppcoro.git
+[submodule "blake3"]
+	path = vendor/blake3
+	url = git@github.com:BLAKE3-team/BLAKE3.git
+[submodule "argparse"]
+	path = vendor/argparse
+	url = git@github.com:p-ranav/argparse.git
+[submodule "spdlog"]
+	path = vendor/spdlog
+	url = git@github.com:gabime/spdlog.git
+[submodule "threadpool2"]
+	path = vendor/threadpool2
+	url = git@github.com:bshoshany/thread-pool.git
