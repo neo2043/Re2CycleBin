@@ -6,4 +6,4 @@ the tool is not complete
 
 For Demo: 
 
-<video src="./DEMO/recovery.mp4" controls preload></video>
+/DEMO/recovery.mp4
